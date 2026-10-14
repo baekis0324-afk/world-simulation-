@@ -1,5 +1,11 @@
 <meta charset="utf-8">
 <title>World History Simulator</title>
+<meta name="description" content="Watch societies rise on a real world map: a 12,000-year simulation of climate, farming, states, wars, trade and technology that runs in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="World History Simulator">
+<meta property="og:description" content="Watch societies rise on a real world map: a 12,000-year simulation of climate, farming, states, wars, trade and technology that runs in your browser.">
+<meta property="og:image" content="https://baekis0324-afk.github.io/world-simulation-/preview.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: control strips, the map stage, a time panel, an events panel, legend grid last */
@@ -75,6 +81,8 @@ canvas{width:100%;height:100%;display:block}
 
 /* v19 layout: map with a side panel (rankings, society, legend); grouped map modes; layer chips */
 .tools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.tools .sp{flex:1}
+.lnk{font-size:13px;color:var(--accent);text-decoration:none}.lnk:hover{text-decoration:underline}.lnk.sup{font-weight:600;border:1px solid var(--accent);border-radius:6px;padding:3px 9px}
+.adbox{border-top:1px solid var(--line);padding:6px;min-height:90px;flex:none}
 .seg{display:inline-flex;flex-wrap:wrap;align-items:center}.seg .gl{font:.72rem var(--mono);color:var(--muted);margin-right:6px}
 .seg button{border-radius:0;margin-left:-1px}.seg .gl+button{border-radius:6px 0 0 6px;margin-left:0}.seg button:last-of-type{border-radius:0 6px 6px 0}
 .seg select{margin-left:6px}
@@ -107,6 +115,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
   <div class="layers" role="group" aria-label="Layers"><label class="t"><input type="checkbox" id="c-rel" checked>Relief</label><label class="t"><input type="checkbox" id="c-civ" checked>Borders</label><label class="t"><input type="checkbox" id="c-ppl" checked>Villages</label><label class="t"><input type="checkbox" id="c-town">Towns</label><label class="t"><input type="checkbox" id="c-riv" checked>Rivers</label><label class="t"><input type="checkbox" id="c-lf" checked>Landforms</label><label class="t"><input type="checkbox" id="c-flag">Flags</label><label class="t"><input type="checkbox" id="c-hz" checked>Hazards</label><label class="t op" title="Flag opacity">Opacity <input type="range" id="flag-a" min="10" max="100" step="5" value="70" aria-label="Flag opacity"></label></div>
   <span class="sp"></span>
   <select id="lang" aria-label="Language"></select>
+  <a id="support" class="lnk sup" hidden target="_blank" rel="noopener">Support</a><a class="lnk" href="privacy.html" target="_blank" rel="noopener">Privacy and credits</a>
   <button id="z-in" aria-label="Zoom in">+</button><button id="z-out" aria-label="Zoom out">−</button><button id="z-0">Reset</button>
 </div>
 <div class="bar play">
@@ -126,7 +135,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
   <aside class="side" aria-label="Side panel"><div class="tabs" role="tablist"><button role="tab" id="t-rank" aria-selected="true">Rankings</button><button role="tab" id="t-soc" aria-selected="false">Society</button><button role="tab" id="t-leg" aria-selected="false">Legend</button></div>
     <div class="panes"><section id="p-rank" class="pane" aria-label="Rankings"><div class="rkh"><select id="rk-by" aria-label="Rank by"><option value="all">Overall strength</option><option value="mil">Military power</option><option value="econ">Economy</option><option value="pop">Population</option><option value="area">Territory</option><option value="tech">Technology</option></select><small id="rk-n"></small></div><table class="rk" id="rk"></table></section>
     <section class="pane cp" id="cpanel" aria-label="Selected society"></section>
-    <section id="p-leg" class="pane" hidden aria-label="Legend"><div class="legend" id="legend"></div></section></div></aside>
+    <section id="p-leg" class="pane" hidden aria-label="Legend"><div class="legend" id="legend"></div></section></div><div id="adbox" class="adbox" hidden></div></aside>
 </div>
 
 <div id="rwin" class="modal" hidden></div>
@@ -164,6 +173,7 @@ Interface and peoples (v19): the map has a side panel with Rankings (overall str
 Speed (v20): a climate update redoes only what changed. Each worker keeps the last era's neighbourhood sums (fertile land, domestic animals, ice margin, natural barriers), sea distances, resources and per-cell odds, and updates them only around the cells whose climate changed (a few thousand per era step); after a large jump it recomputes everything. The map image is repainted only where climate, summer temperature or relief changed, and while time runs the workers compute the next era in advance. Results are the same as before (odds differ by less than one part in ten million, from rounding).
 Americas (v20.1): state formation is slower in the Americas (realms of North and South America): faith, authority and state odds x0.5, and settling and farming x0.5 (both adjustable). A model choice: a small founding population crossed Beringia (genetic estimates of a few hundred people) and there were fewer competing neighbours; the first states there arose late (Monte Alban in Oaxaca, 300-100 BC).
 Africa and the Levant (v20.2): sub-Saharan Africa (realm south of 17 N) forms states more slowly: faith, authority and state odds x0.25 (the Sub-Saharan Africa selector), settling, farming and the spread of farming x0.5. The Levant (29-37.5 N, 33.5-40 E) and the Egyptian Nile (22-31.7 N, 28.5-34 E) build faith and authority and form states x2 faster. All adjustable; model choices (Egypt was unified about 3100 BC; Kerma in Nubia, about 2400-1570 BC, is described as the earliest centralized state of sub-Saharan Africa).
+Support and ads (v21): a Support button and one ad unit appear only when the site owner fills in site.json; ads are served by Google AdSense, which uses cookies (see Privacy and credits). Saves stay in this browser.
 Flags: pre-modern banners (plain field, bordered, chief, per pale, pennant, swallowtail, hanging vexillum; no modern tricolours) in natural dye colours: undyed white, charcoal black, ochre red and yellow and earth brown at first, then madder (orange, maroon), indigo (blue), mordants (green) and shellfish purple as the society learns them. Colours follow climate and character, the emblem a landmark (highest peak, volcano, sea, sun faith, dominant animal); a new government or a new dye may bring a new flag. Each civilization's territory is painted with its flag. Technology only limits the colours; it chooses nothing.
 Nature: earthquakes and eruptions are off at 100 yr/s or faster and happen at 1/10 of the observed rates (a model choice). Earthquakes near plate boundaries (PB2002, Bird 2003) by Mercalli intensity — VI–VIII damage harvests and buildings for 5 years, IX for 10, X extremely rarely, XI–XII never; minor intensity V shocks only at 1 month/s; earthquakes are not marked or logged at 2 yr/s or faster; the Hazards checkbox hides all hazard markers; eruptions VEI 4–6 hit the area for 3–8 years, VEI 7–8 also bring a 10-year volcanic winter; tropical cyclones (only at 1 yr/s or slower) last 1 month to a year by category and follow ENSO; El Niño and La Niña (only at 1 yr/s or slower) bring yearly famine or plenty to the regions they reach, with month-by-month detail at 6 months/s and 1 month/s. Borders are thin vector lines. When cells are larger than 2.5 screen pixels the map is redrawn per screen pixel in a background worker, like a tiled web map: colours are interpolated between cells, coasts and territory edges follow smoothed outlines, borders are drawn at pixel level, and relief adds procedural sub-cell roughness (by terrain class: flat 20 m, hills 250 m, mountains 800 m) to the ETOPO heights. Detail finer than one cell (about 18 km) is therefore illustrative, not data. While panning, the previous image is moved until the new one is ready. A new climate era is computed only when ice volume or 65°N June insolation has moved enough; time keeps running on the last climate for up to three era steps. The climate, resources, odds and relief of each era are computed in parallel by Web Workers (one per spare CPU core, falling back to the main thread).</div>
 <script>
@@ -2420,6 +2430,13 @@ function applyLang(l){LANG=l==="en"||I18N[l]?l:"en";try{localStorage.setItem("la
 fetch("i18n.json").then(r=>r.json()).then(j=>{I18N=j;$("lang").innerHTML=Object.entries(j.names).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");let p=null;try{p=localStorage.getItem("lang")}catch(e){}
   if(p!=="en"&&!j[p])p=(navigator.languages||[navigator.language||"en"]).map(x=>x.slice(0,2)).find(x=>x==="en"||j[x])||"en";applyLang(p)}).catch(()=>{$("lang").hidden=true});
 $("lang").onchange=e=>applyLang(e.target.value);
+// v21: optional site settings in site.json: a support link (https) and an AdSense unit (ca-pub-... client and a slot id).
+// Nothing is shown and no ad script loads until they are filled in.
+fetch("site.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(s=>{const u=s.support&&s.support.url;if(/^https:\/\//.test(u||"")){$("support").href=u;$("support").hidden=false}
+  const ad=s.adsense||{};if(!/^ca-pub-\d+$/.test(ad.client||"")||!/^\d+$/.test(ad.slot||""))return;
+  const sc=document.createElement("script");sc.async=true;sc.crossOrigin="anonymous";sc.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+ad.client;document.head.appendChild(sc);
+  const ins=document.createElement("ins");ins.className="adsbygoogle";ins.style.display="block";Object.assign(ins.dataset,{adClient:ad.client,adSlot:ad.slot,adFormat:"auto",fullWidthResponsive:"true"});
+  $("adbox").appendChild(ins);$("adbox").hidden=false;(window.adsbygoogle=window.adsbygoogle||[]).push({})}).catch(()=>{});
 async function bytes(url){const b=unb64((await (await fetch(url)).text()).trim());
   return b[0]===0x1f&&b[1]===0x8b?new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()):b}
 Promise.all([fetch("map.json").then(r=>r.json()),bytes("grid.txt"),bytes("elev.txt"),bytes("plates.txt").catch(()=>null),Promise.race([loadSave(),new Promise(r=>setTimeout(()=>r(null),8000))])]).then(([d,g,el,pl,sv])=>{D=d;initGrid(g,el);initPlates(pl);buildRivers();
