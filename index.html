@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <title>World History Simulator</title>
 <meta name="description" content="Watch societies rise on a real world map: a 12,000-year simulation of climate, farming, states, wars, trade and technology that runs in your browser.">
 <meta property="og:type" content="website">
@@ -27,6 +28,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .stage{position:relative;width:100%;height:0;padding-bottom:50%;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--ocean);touch-action:none;cursor:grab}
 canvas{width:100%;height:100%;display:block}
 #cv{position:absolute;inset:0}
+#cv3{position:absolute;inset:0;pointer-events:none}
 #tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);padding:6px 8px;border-radius:6px;font:.72rem/1.4 var(--mono);white-space:nowrap;max-width:none}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font:600 .85rem var(--mono);color:var(--fg)}
 #loading[hidden]{display:none}
@@ -112,7 +114,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
 <div class="tools">
   <div class="seg" role="group" aria-label="Land maps"><span class="gl">Land</span><button id="m-nat" aria-pressed="true">Natural</button><button id="m-kg" aria-pressed="false">Köppen</button><button id="m-grp" aria-pressed="false">Groups</button><button id="m-off" aria-pressed="false">Terrain</button><button id="m-res" aria-pressed="false">Resources</button><button id="m-fau" aria-pressed="false">Fauna</button><button id="m-odd" aria-pressed="false">Civ odds</button><select id="res" aria-label="Resource"></select></div>
   <div class="seg" role="group" aria-label="Society maps"><span class="gl">People</span><button id="m-ppl" aria-pressed="false">People</button><button id="m-civ" aria-pressed="false">Societies</button><button id="m-dev" aria-pressed="false">Development</button><button id="m-unr" aria-pressed="false">Unrest</button><button id="m-tec" aria-pressed="false">Technology</button><button id="m-rod" aria-pressed="false">Roads</button></div>
-  <div class="layers" role="group" aria-label="Layers"><label class="t"><input type="checkbox" id="c-rel" checked>Relief</label><label class="t"><input type="checkbox" id="c-civ" checked>Borders</label><label class="t"><input type="checkbox" id="c-ppl" checked>Villages</label><label class="t"><input type="checkbox" id="c-town">Towns</label><label class="t"><input type="checkbox" id="c-riv" checked>Rivers</label><label class="t"><input type="checkbox" id="c-lf" checked>Landforms</label><label class="t"><input type="checkbox" id="c-flag">Flags</label><label class="t"><input type="checkbox" id="c-hz" checked>Hazards</label><label class="t op" title="Flag opacity">Opacity <input type="range" id="flag-a" min="10" max="100" step="5" value="70" aria-label="Flag opacity"></label></div>
+  <div class="layers" role="group" aria-label="Layers"><label class="t"><input type="checkbox" id="c-rel" checked>Relief</label><label class="t"><input type="checkbox" id="c-civ" checked>Borders</label><label class="t"><input type="checkbox" id="c-ppl" checked>Villages</label><label class="t"><input type="checkbox" id="c-town">Towns</label><label class="t"><input type="checkbox" id="c-riv" checked>Rivers</label><label class="t"><input type="checkbox" id="c-lf" checked>Landforms</label><label class="t" title="3D models when zoomed in"><input type="checkbox" id="c-3d" checked>3D</label><label class="t"><input type="checkbox" id="c-flag">Flags</label><label class="t"><input type="checkbox" id="c-hz" checked>Hazards</label><label class="t op" title="Flag opacity">Opacity <input type="range" id="flag-a" min="10" max="100" step="5" value="70" aria-label="Flag opacity"></label></div>
   <span class="sp"></span>
   <select id="lang" aria-label="Language"></select>
   <a id="support" class="lnk sup" hidden target="_blank" rel="noopener">Support</a><a class="lnk" href="privacy.html" target="_blank" rel="noopener">Privacy and credits</a>
@@ -131,7 +133,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
   <span id="catch" class="busy" hidden></span><button id="skip" hidden>Stop catch-up</button><span id="saved" class="busy" style="color:var(--muted)"></span><span id="cores" class="busy" style="color:var(--muted)"></span>
 </div>
 <div class="main">
-  <div class="mapcol"><div class="stage" id="stage"><canvas id="cv"></canvas><div id="loading">Loading 2160 × 1080 map data…</div><div id="tip" hidden></div></div></div>
+  <div class="mapcol"><div class="stage" id="stage"><canvas id="cv"></canvas><canvas id="cv3" hidden></canvas><div id="loading">Loading 2160 × 1080 map data…</div><div id="tip" hidden></div></div></div>
   <aside class="side" aria-label="Side panel"><div class="tabs" role="tablist"><button role="tab" id="t-rank" aria-selected="true">Rankings</button><button role="tab" id="t-soc" aria-selected="false">Society</button><button role="tab" id="t-leg" aria-selected="false">Legend</button></div>
     <div class="panes"><section id="p-rank" class="pane" aria-label="Rankings"><div class="rkh"><select id="rk-by" aria-label="Rank by"><option value="all">Overall strength</option><option value="mil">Military power</option><option value="econ">Economy</option><option value="pop">Population</option><option value="area">Territory</option><option value="tech">Technology</option></select><small id="rk-n"></small></div><table class="rk" id="rk"></table></section>
     <section class="pane cp" id="cpanel" aria-label="Selected society"></section>
@@ -175,6 +177,7 @@ Americas (v20.1): state formation is slower in the Americas (realms of North and
 Africa and the Levant (v20.2): sub-Saharan Africa (realm south of 17 N) forms states more slowly: faith, authority and state odds x0.25 (the Sub-Saharan Africa selector), settling, farming and the spread of farming x0.5. The Levant (29-37.5 N, 33.5-40 E) and the Egyptian Nile (22-31.7 N, 28.5-34 E) build faith and authority and form states x2 faster. All adjustable; model choices (Egypt was unified about 3100 BC; Kerma in Nubia, about 2400-1570 BC, is described as the earliest centralized state of sub-Saharan Africa).
 Support and ads (v21): a Support button and one ad unit appear only when the site owner fills in site.json; ads are served by Google AdSense, which uses cookies (see Privacy and credits). Saves stay in this browser.
 Flags: pre-modern banners (plain field, bordered, chief, per pale, pennant, swallowtail, hanging vexillum; no modern tricolours) in natural dye colours: undyed white, charcoal black, ochre red and yellow and earth brown at first, then madder (orange, maroon), indigo (blue), mordants (green) and shellfish purple as the society learns them. Colours follow climate and character, the emblem a landmark (highest peak, volcano, sea, sun faith, dominant animal); a new government or a new dye may bring a new flag. Each civilization's territory is painted with its flag. Technology only limits the colours; it chooses nothing.
+3D map (v22): zoomed in, every society shows its capital (and, with Towns on, its other cities) as a small 3D town with a garrison, among 3D trees and rocks; the models follow four development levels set by technology (camp; village or town with siege engines; early modern with gunpowder or steam; modern with electricity, cars or tanks), and in every map mode but Natural they take on the map colour of their place. People move on the real clock, so their pace does not change with the simulation speed; animation frames are capped at 30 per second. City and state names follow the sound patterns of the language region where they were founded (invented words, not real names). Models: Kenney (CC0); three.js (MIT). The 3D box turns the layer off.
 Nature: earthquakes and eruptions are off at 100 yr/s or faster and happen at 1/10 of the observed rates (a model choice). Earthquakes near plate boundaries (PB2002, Bird 2003) by Mercalli intensity — VI–VIII damage harvests and buildings for 5 years, IX for 10, X extremely rarely, XI–XII never; minor intensity V shocks only at 1 month/s; earthquakes are not marked or logged at 2 yr/s or faster; the Hazards checkbox hides all hazard markers; eruptions VEI 4–6 hit the area for 3–8 years, VEI 7–8 also bring a 10-year volcanic winter; tropical cyclones (only at 1 yr/s or slower) last 1 month to a year by category and follow ENSO; El Niño and La Niña (only at 1 yr/s or slower) bring yearly famine or plenty to the regions they reach, with month-by-month detail at 6 months/s and 1 month/s. Borders are thin vector lines. When cells are larger than 2.5 screen pixels the map is redrawn per screen pixel in a background worker, like a tiled web map: colours are interpolated between cells, coasts and territory edges follow smoothed outlines, borders are drawn at pixel level, and relief adds procedural sub-cell roughness (by terrain class: flat 20 m, hills 250 m, mountains 800 m) to the ETOPO heights. Detail finer than one cell (about 18 km) is therefore illustrative, not data. While panning, the previous image is moved until the new one is ready. A new climate era is computed only when ice volume or 65°N June insolation has moved enough; time keeps running on the last climate for up to three era steps. The climate, resources, odds and relief of each era are computed in parallel by Web Workers (one per spare CPU core, falling back to the main thread).</div>
 <script>
 // ===== CORE (data model + simulation, no DOM) =====
@@ -717,7 +720,13 @@ const shuffle=(a,rnd)=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=rnd()*(i+
 // sound inventories by region, loosely modelled on the language families spoken there (invented words, not real names):
 // [onsets, vowels, codas, suffixes]; famAt picks one from the founding cell (lat/lon boxes, first match)
 const S_=x=>x.split(" ").map(v=>v==="-"?"":v);
-const FAM={eur:["b d g k t p s st br tr v r l m n h dr gr","a e i o u ei au","- n r s l nd rt m x","- ia ium land mark gard os ene ica heim"],
+const FAM={rom:["b c d f g l m n p r s t v gr pr tr br","a e i o u ia io","- n r s l","- ia ona ana ium ica"],
+  ger:["b d f g h k l m n r s t w st br fr gr kr sch","a e i o u ei au ie","- n r l d t ng rd ld nd","- land mark heim ia"],
+  sla:["b v g d z k l m n p r s t ch sh zh pr br sl kr dr","a e i o u y ia","- v n k sl sk r","- ia ovia ava ska"],
+  gre:["k t p d g l m n r s th ph ch kr pl","a e i o y ai ei ou","- s n r","- ia os is ene"],
+  cel:["b c d g l m n r t br gl dr bl gw ll","a e i o u ae ai","- n r ll dd th g","- ia wy en more"],
+  mke:["b d k t p ng nh ch th kh ph s l m n h v","a e i o u ua ia ao","- ng n m t p","- thai ya bang phum"],
+  eur:["b d g k t p s st br tr v r l m n h dr gr","a e i o u ei au","- n r s l nd rt m x","- ia ium land mark gard os ene ica heim"],
   sem:["k q sh m n b d r l h kh z t y s","a i u a aa","- m n r l sh t d b k","- at un ash ad ir"],ira:["p t k b d g s z sh kh r m n v f y","a e i o u aa","- r n sh s d z sp st","- an stan ana ush dar"],
   sas:["bh dh k r s m v p t n j ch g h sh d","a i u e o aa","- n m r sh t","- pur desha ra ana nagar"],tur:["k t b q s y ch m j kh d g -","a e i o u","- n r k t z sh l y gh","- an ur khan tai kent"],
   ura:["k t s m n v j p l h y","a e i o u aa ie","- n s t k l","- la maa ga ra"],sin:["zh ch sh x q j h l m n g k t d b p w y s z","a o e i u ao ai ei ou ia ua uo","- n ng - n ng","-"],
@@ -730,7 +739,8 @@ const FAM={eur:["b d g k t p s st br tr v r l m n h dr gr","a e i o u ei au","- 
   tup:["t p m n k y r w g -","a e i o u y","- m n","- ra tiba pe gua"]};
 for(const k in FAM)FAM[k]=FAM[k].map(S_);
 // [family, lat0, lat1, lon0, lon1]
-const FAMBOX=[["kor",33,43.5,124,130.5],["jpn",24,46,129,150],["tib",27,37,78,98],["sin",21,42,98,124],["aus",-26,-12,43,51],["aus",-11,21,92,141],
+const FAMBOX=[["kor",33,43.5,124,130.5],["mke",8,24,97,110],["ura",59.5,70.5,21,32],["cel",50,61,-11,2],["gre",34,42.5,19,36],
+  ["rom",36,44,-10,3.5],["rom",42,51,-5,8],["rom",37,46.5,6.5,18.6],["ger",47,58,2,15],["ger",55,71,4,32],["sla",42,60,13,45],["jpn",24,46,129,150],["tib",27,37,78,98],["sin",21,42,98,124],["aus",-26,-12,43,51],["aus",-11,21,92,141],
   ["abo",-45,-10,112,154],["aus",-11,0,141,151],["pol",-50,30,150,180],["pol",-50,30,-180,-130],["sas",5,30,66,92],["ira",25,42,48,66],["ira",38,45,38,50],
   ["sem",12,37.5,-18,60],["sem",0,15,33,52],["eur",36,72,-25,45],["ura",55,80,45,180],["tur",38,55,45,125],["tur",42,55,125,140],["waf",0,18,-18,15],["ban",-36,12,8,52],
   ["esk",60,85,-170,-10],["nam",24,60,-170,-50],["mes",8,24,-120,-60],["and",-40,8,-82,-64],["tup",-56,13,-82,-30]];
@@ -742,6 +752,12 @@ function mutateLang(L,rnd){const[on,vo,,suf]=inv(L.fam),m={fam:L.fam??null,on:[.
 // a daughter society founded in another language region takes up the local speech 70% of the time
 const langFor=(i,parent,rnd)=>{const f=famAt(i);return!parent?newLang(rnd,f):f&&f!==parent.lang.fam&&rnd()<.7?newLang(rnd,f):mutateLang(parent.lang,rnd)};
 function word(L,rnd,n){let s="";for(let j=0;j<n;j++)s+=L.on[rnd()*L.on.length|0]+L.vo[rnd()*L.vo.length|0]+(j===n-1||rnd()<.3?L.co[rnd()*L.co.length|0]:"");return s[0]?tidy(s[0].toUpperCase()+s.slice(1)):"A"}
+const TOWN={rom:"a ona ano ium ella",ger:"burg heim dorf stadt feld",sla:"grad ov ice sk ava",gre:"polis os ion eia",cel:"dun more wick ard",eur:"ton burg ia um",
+  sem:"at ur ah on",ira:"abad shahr kand an",sas:"pur abad nagar garh",tur:"kent balyk kala ordu",ura:"la kar va",sin:"an zhou yang jing cheng",tib:"ling tse gang",
+  kor:"ju seong won san",jpn:"ma ka shima yama saka",aus:"pura nagara an",pol:"nui iki",abo:"ra ji",ban:"ni ngo we",waf:"ka bougou ba",esk:"miut juaq",nam:"kee ota aki",
+  mes:"tlan pan co",and:"marka pampa cocha",tup:"tiba gua pe",mke:"bang pura thani ya"};
+function cityName(L,rnd){const w=word(L,rnd,2),e=(TOWN[L.fam]||"").split(" ").filter(Boolean),h=[...w].reduce((a,ch)=>Math.imul(a^ch.charCodeAt(0),16777619)>>>0,2166136261);
+  return e.length&&h%3?tidy(w+e[(h>>>2)%e.length]):w}
 const tidy=s=>s.replace(/(.)\1\1+/g,"$1$1").replace(/([aeiou]{2})[aeiou]+/gi,"$1"); // no triple letters or long vowel runs
 const newTraits=rnd=>({aggr:rnd(),piety:rnd(),amb:rnd(),open:rnd()});
 const mutTraits=(t,rnd)=>{const m={};for(const k in t)m[k]=Math.max(0,Math.min(1,t[k]+(rnd()-.5)*.3));return m};
@@ -1230,7 +1246,7 @@ const matOf=(c,t)=>{const s=c.sty,T=c.tech;if(t==="stones")return"stone";if(t===
   if(s.mat==="timber")return T.masonry&&(t==="walls"||t==="monument")?"stone":"timber";if(s.mat==="stone"&&T.masonry)return T.concrete?"concrete":T.arch?"arch":"stone";
   return T.concrete&&s.mat!=="earth"?"concrete":T.mud?"brick":"earth"};
 function build(c,d){if(!c.sty)c.sty=makeStyle(c);if(!(c.stage===3&&c.ruler))c.bpts=Math.min(8000,(c.bpts||0)+d*c.P/20000*(1+c.dev)*(c.stage===3?1:.5)*c.fx.R); // states: from the treasury (fiscal)
-  if(!c.proj){if(!CITY.has(c.cap))CITY.set(c.cap,{i:c.cap,name:word(c.lang,SIM.rnd,2),orig:c.id,t:SIM.t,conqT:-1e9,a:0,n:0,food:0,dist:0});
+  if(!c.proj){if(!CITY.has(c.cap))CITY.set(c.cap,{i:c.cap,name:cityName(c.lang,SIM.rnd),orig:c.id,t:SIM.t,conqT:-1e9,a:0,n:0,food:0,dist:0});
     const seats=c.stage===3&&c.cities.length?c.cities:[c.cap],L=[];let s=0;
     for(const i of seats){const k=CITY.get(i);if(!k||G.civ[i]!==c.id||(k.b&&k.b.length>=8))continue;for(const t in BLD){const B=BLD[t];
       if((B.cap&&i!==c.cap)||(B.st&&c.stage<3)||!B.need.every(x=>c.tech[x])||(k.b&&k.b.some(b=>b.t===t)))continue;const w=B.w(c,k);L.push([i,t,w]);s+=w}}
@@ -1327,7 +1343,7 @@ const power=c=>c.army*(1+.06*(st(c.ruler,"mil")-5))*gpX(c,"general",.08)/Math.ma
 function recomputeCities(c){const max=Math.min(PP.CITY_MAX,1+(c.cells.length/40|0));let own=[];for(const i of c.cells)if(i!==c.cap&&CITY.has(i)&&G.civ[i]===c.id)own.push(i);
   if(own.length>=max)own=own.sort((a,b)=>CITY.get(a).t-CITY.get(b).t).slice(0,max-1); // oldest cities stay seats; the rest are towns
   if(CITY.has(c.cap))own.unshift(c.cap);
-  const add=i=>{CITY.set(i,{i,name:word(c.lang,SIM.rnd,2),orig:c.id,t:SIM.t,conqT:-1e9,a:0});own.push(i)};
+  const add=i=>{CITY.set(i,{i,name:cityName(c.lang,SIM.rnd),orig:c.id,t:SIM.t,conqT:-1e9,a:0});own.push(i)};
   if(!CITY.has(c.cap)){add(c.cap);own.unshift(own.pop())}const lls=own.map(llOf),fl=BUF[CUR].flag;
   if(own.length<max&&!(Math.abs(c.cells.length-c.cityTry)<.1*c.cells.length)){c.cityTry=c.cells.length;
     const sc=new Map();for(const i of c.cells)if(G.civ[i]===c.id&&liveCell(i))sc.set(i,foodCell(i,c)+(G.river[i]?3:0)+(fl[i]&F.COAST?2:0)-G.terrain[i]+SIM.rnd());
@@ -1781,7 +1797,7 @@ function cityModel(k,x,y,s){const o=SIM.civs[G.civ[k.i]];if(!o||!o.alive)return;
   for(let j=0;j<n;j++)P.push([x+((hash(k.i,500+j)%1000)/1000-.5)*s*.8,y+((hash(k.i,600+j)%1000)/1000-.5)*s*.6]);P.sort((a,b)=>a[1]-b[1]);
   if(k.i===o.cap)monument3(x,y-s*.05,s*.9,st.mon,wall);for(const[px,py]of P)house(px,py,s*.2,s*.16,wall,st.roof,rc)}
 let g3=ctx;const D3={key:"",cv:null};
-function drawDetailCached(s,r,dpr){const key=[view.k,view.x|0,view.y|0,mode,E.k,r.width,r.height,CITY.size,SIM.stl.length,dpr,$("c-town").checked].join("|");
+function drawDetailCached(s,r,dpr){const key=[view.k,view.x|0,view.y|0,mode,E.k,r.width,r.height,CITY.size,SIM.stl.length,dpr,$("c-town").checked,L3READY].join("|");
   if(D3.key!==key){if(!D3.cv||D3.cv.width!==Math.round(r.width*dpr)||D3.cv.height!==Math.round(r.height*dpr))D3.cv=new OffscreenCanvas(Math.round(r.width*dpr),Math.round(r.height*dpr));
     g3=D3.cv.getContext("2d");g3.setTransform(dpr,0,0,dpr,0,0);g3.clearRect(0,0,r.width,r.height);drawDetail(s,r);g3=ctx;D3.key=key}
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(D3.cv,0,0);ctx.restore()}
@@ -1789,14 +1805,14 @@ function drawDetail(s,r){if(s<6)return;const x0=Math.max(0,Math.floor(-view.x/s)
   const town=$("c-town").checked,trees=s>=10,treeMax=s<14?2:s<24?4:s<40?6:9,dense=Math.min(1,(s-10)/40);
   for(let y=y0;y<y1;y++){const lat=latOf(y);for(let x=x0;x<x1;x++){const i=y*W+x,v=E.clim[i];if(v>=30&&v!==31)continue;
     const cx=view.x+(x+.5)*s,cy=view.y+(y+.5)*s,code=KGL[v]||"",l=G.landform[i],t=G.terrain[i],h0=hash(i,7),k=CITY.get(i);
-    if(t===2&&!l&&s>=8){const cold=/^(E|D[fws][cd])/.test(code)||Math.abs(lat)>58||v===31,n=1+(h0%2);
+    if(t===2&&!l&&s>=8&&!L3READY){const cold=/^(E|D[fws][cd])/.test(code)||Math.abs(lat)>58||v===31,n=1+(h0%2);
       for(let j=0;j<n;j++){const px=cx+((hash(i,20+j)%100)/100-.5)*s*.7,py=cy+((hash(i,30+j)%100)/100-.3)*s*.6,w=s*(.16+(hash(i,40+j)%100)/1000);cone(px,py,w,w*(1.6+(hash(i,50+j)%100)/100),ROCK,cold)}}
-    if(trees&&!k&&l!==10&&l!==5&&l!==4&&l!==14){const wood=R.wood[i],base=wood?wood:(/^(Aw|As|BS|Cs|Cw)/.test(code)?.6:/^BW/.test(code)?.15:0);
+    if(trees&&!L3READY&&!k&&l!==10&&l!==5&&l!==4&&l!==14){const wood=R.wood[i],base=wood?wood:(/^(Aw|As|BS|Cs|Cw)/.test(code)?.6:/^BW/.test(code)?.15:0);
       let n=Math.round(base*treeMax/3*(.6+dense*.6)+((h0>>>4)%100<base*33?1:0));if(t===2)n=Math.ceil(n/2);if(l===12||l===9)n=0;
       const kind=treeKind(code,lat),pts=[];for(let j=0;j<n;j++)pts.push([cx+((hash(i,100+j)%1000)/1000-.5)*s*.92,cy+((hash(i,200+j)%1000)/1000-.5)*s*.92,(hash(i,300+j)%1000)/1000]);
       pts.sort((a,b)=>a[1]-b[1]);const Ht=s*(kind==="shrub"?.18:kind==="acacia"?.28:kind==="palm"?.4:.34);for(const[px,py,rr]of pts)drawTree(kind,px,py,Ht*(.75+rr*.5),rr)}
     if(l)drawLandform(l,i,cx,cy,s,(h0%1000)/1000,code,lat);
-    if(k&&G.civ[i]>=0&&(town||SIM.civs[G.civ[i]].cap===i))cityModel(k,cx,cy,s)}}} // towns only when the Towns box is on; capitals always
+    if(k&&!L3READY&&G.civ[i]>=0&&(town||SIM.civs[G.civ[i]].cap===i))cityModel(k,cx,cy,s)}}} // towns only when the Towns box is on; capitals always
 // Zoomed base: per-pixel resampling of the cell colours with smooth coasts and procedural sub-cell relief (not data), rendered in a worker
 let BAKEV=0,OVV=0;const LOWC={key:"",ov:-1,t:0,cv:null},DB={cv:null,key:"",v:null,ov:-1,t:0,tm:0,rw:0,rh:0,id:0,busy:0,wk:null},CATM=new Set(["kg","grp","odd","res","off","fau"]);
 function detailPx(P){
@@ -1856,7 +1872,34 @@ function drawBase(s,r,dpr){const now=performance.now(),key=[mode,BAKEV,r.width,r
   ctx.imageSmoothingEnabled=true;ctx.drawImage(DB.cv,0,0,DB.rw,DB.rh);return true}
 let INTER=0,SNAP=null,SNV=null,idleT=0,rafP=0;
 function interact(){INTER=performance.now();if(!rafP)rafP=requestAnimationFrame(()=>{rafP=0;draw()})}
-function draw(){if(!base)return;const r=stage.getBoundingClientRect(),dpr=devicePixelRatio||1;
+// ===== v22: 3D map layer (3d/layer3d.js, three.js). Loaded on the first zoom-in; drawn from S3 px per cell (people from 28 px). In every map mode
+// but Natural, models take on the map colour of their cell. Development level from technology: 0 camp, 1 village or town,
+// 2 early modern (gunpowder weapons or steam), 3 modern (electricity, cars or tanks).
+const S3=12,TK3={palm:"tree_palmTall",trop:"tree_default",acacia:"tree_fat",shrub:"plant_bushLarge",olive:"tree_fat",broad:"tree_default",conifer:"tree_cone"};
+let L3=null,L3ON=false,L3READY=false;
+const lv3=c=>{const T=c.tech;return T.auto||T.electric||T.tank||T.mroad?3:T.steam||T.rail||T.cannon||T.matchlock?2:c.stage>=3?1:0};
+function mapCol(i){if(mode==="nat")return null;const b=BUF[CUR].img.data,o=OV.data,k=i*4,a=o[k+3]/255;return[b[k]*(1-a)+o[k]*a,b[k+1]*(1-a)+o[k+1]*a,b[k+2]*(1-a)+o[k+2]*a]}
+const SRC3={busy:()=>!!(SIM.on||CATCH),view(){if(!base||!E)return null;const r=stage.getBoundingClientRect(),s=r.width/W*view.k;
+    return s<S3?null:{w:r.width,h:r.height,s,key:[view.k,view.x,view.y,mode,BAKEV,OVV,r.width,r.height,SIM.stl.length,CITY.size,$("c-town").checked].join("|")}},
+  items(){const r=stage.getBoundingClientRect(),s=r.width/W*view.k,x0=Math.max(0,Math.floor(-view.x/s)-1),x1=Math.min(W,Math.ceil((r.width-view.x)/s)+1),
+    y0=Math.max(0,Math.floor(-view.y/s)-1),y1=Math.min(H,Math.ceil((r.height-view.y)/s)+2),vis=i=>{const x=i%W,y=i/W|0;return x>=x0&&x<x1&&y>=y0&&y<y1},
+    X=i=>view.x+((i%W)+.5)*s,Y=i=>view.y+((i/W|0)+.5)*s,towns=[],decor=[],town=$("c-town").checked,taken=new Set();
+  for(const c of SIM.civs){if(!c.alive||c.stage<1)continue;const lv=lv3(c);
+    for(const i of c.stage===3&&town?c.cities:[c.cap])if(vis(i)&&liveCell(i)){taken.add(i);towns.push({x:X(i),y:Y(i),lv,cap:i===c.cap,P:c.P,r:(hash(i,5)%628)/100,tint:mapCol(i)})}}
+  towns.sort((a,b)=>b.cap-a.cap||b.P-a.P);towns.length=Math.min(towns.length,400);
+  const treeMax=s<14?2:s<24?4:s<40?6:9,dense=Math.min(1,(s-10)/40);
+  for(let y=y0;y<y1&&decor.length<1800;y++){const lat=latOf(y);for(let x=x0;x<x1;x++){const i=y*W+x,v=E.clim[i];if(v>=30&&v!==31||taken.has(i))continue;
+    const code=KGL[v]||"",l=G.landform[i],t=G.terrain[i],tint=mapCol(i),cx=X(i),cy=Y(i);
+    if(t===2&&!l)for(let j=0,n=1+hash(i,7)%2;j<n;j++)decor.push({p:j?"rock_tallB":"rock_largeA",x:cx+((hash(i,20+j)%100)/100-.5)*s*.7,y:cy+((hash(i,30+j)%100)/100-.3)*s*.6,k:.8+(hash(i,40+j)%100)/250,r:hash(i,60+j)%7,tint});
+    if(l===10||l===5||l===4||l===14||l===12||l===9)continue;const wood=R.wood[i],b0=wood?wood:(/^(Aw|As|BS|Cs|Cw)/.test(code)?.6:/^BW/.test(code)?.15:0);
+    let n=Math.round(b0*treeMax/3*(.6+dense*.6)+((hash(i,7)>>>4)%100<b0*33?1:0));if(t===2)n=Math.ceil(n/2);const p=TK3[treeKind(code,lat)];
+    for(let j=0;j<n;j++)decor.push({p,x:cx+((hash(i,100+j)%1000)/1000-.5)*s*.92,y:cy+((hash(i,200+j)%1000)/1000-.5)*s*.92,k:.75+(hash(i,300+j)%1000)/2000,r:hash(i,400+j)%7,tint})}}
+  return{towns,decor}}};
+function l3sync(){const want=$("c-3d").checked&&!!base&&stage.getBoundingClientRect().width/W*view.k>=S3;if(want===L3ON)return;L3ON=want;
+  if(want)(L3||=import("./3d/layer3d.js")).then(m=>m.start($("cv3"),SRC3).then(()=>{if(!L3ON)m.stop();else if(!L3READY){L3READY=true;draw()}}))
+    .catch(e=>{console.warn("3D layer unavailable",e);L3=null;L3ON=false;$("c-3d").checked=false});
+  else{L3READY=false;L3&&L3.then(m=>m.stop())}}
+function draw(){if(!base)return;l3sync();const r=stage.getBoundingClientRect(),dpr=devicePixelRatio||1;
   if(performance.now()-INTER<150&&SNV&&SNV.w===cv.width&&SNV.h===cv.height){const s=r.width/W*view.k,f=view.k/SNV.k;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,r.width,r.height);
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="low";ctx.drawImage(base,view.x,view.y,W*s,H*s);ctx.drawImage(OVL,view.x,view.y,W*s,H*s);ctx.drawImage(SNAP,view.x-SNV.x*f,view.y-SNV.y*f,SNV.rw*f,SNV.rh*f);
     clearTimeout(idleT);idleT=setTimeout(draw,160);return}
@@ -1898,7 +1941,7 @@ function drawFull(){
     ctx.lineWidth=1.5;ctx.strokeStyle="rgba(214,170,40,.8)";ctx.setLineDash([4,3]);for(const r of SIM.rel.values())if(r.trade&&SIM.civs[r.a].alive&&SIM.civs[r.b].alive)line(SIM.civs[r.a],SIM.civs[r.b]);ctx.setLineDash([]);
     ctx.strokeStyle="rgba(200,40,30,.9)";for(const w of SIM.wars){ctx.lineWidth=2.5;const m=line(SIM.civs[w.a],SIM.civs[w.d]);if(m){const h=5;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m[0]-h,m[1]-h);ctx.lineTo(m[0]+h,m[1]+h);ctx.moveTo(m[0]+h,m[1]-h);ctx.lineTo(m[0]-h,m[1]+h);ctx.stroke()}}
     if(view.k>=3&&$("c-town").checked){ctx.font=`600 10px ${css("--mono")}`;ctx.textAlign="left";ctx.lineWidth=3;for(const c of SIM.stl)if(c.alive)for(const i of c.cities){if(i===c.cap)continue;const k=CITY.get(i),x=view.x+((i%W)+.5)*s,y=view.y+((i/W|0)+.5)*s;
-      if(!k||x<0||y<0||x>r.width||y>r.height)continue;if(!(MODELS.has(mode)&&$("c-lf").checked&&s>=6)){ctx.fillStyle=mode==="unr"?`rgb(${unrCol(k.a)})`:"#fff";ctx.strokeStyle="#111";ctx.lineWidth=1;ctx.fillRect(x-2.5,y-2.5,5,5);ctx.strokeRect(x-2.5,y-2.5,5,5)}
+      if(!k||x<0||y<0||x>r.width||y>r.height)continue;if(!L3READY&&!(MODELS.has(mode)&&$("c-lf").checked&&s>=6)){ctx.fillStyle=mode==="unr"?`rgb(${unrCol(k.a)})`:"#fff";ctx.strokeStyle="#111";ctx.lineWidth=1;ctx.fillRect(x-2.5,y-2.5,5,5);ctx.strokeRect(x-2.5,y-2.5,5,5)}
       if(view.k>=8){ctx.lineWidth=3;ctx.strokeStyle="rgba(255,255,255,.85)";ctx.strokeText(k.name,x+5,y+3);ctx.fillStyle="#222";ctx.fillText(k.name,x+5,y+3)}}}}
   {const now2=performance.now();ctx.lineWidth=1;if(!$("c-hz").checked)HZ.length=0;for(const z of HZ){const a=1-(now2-z.rt)/5000;if(a<=0)continue;const x=view.x+((z.i%W)+.5)*s,y=view.y+((z.i/W|0)+.5)*s,R0=2+(z.kind==="quake"?z.m-5:z.kind==="volc"?z.m-3:z.m)*.8;
     ctx.globalAlpha=a;ctx.strokeStyle=z.kind==="storm"?"#2f7fd6":z.kind==="volc"?"#e0601d":"#c62828";ctx.beginPath();
@@ -1910,8 +1953,8 @@ function drawFull(){
     const st=SIM.stl.filter(c=>c.alive&&liveCell(c.cap)).sort((a,b)=>b.P-a.P),ch=view.k>=6?SIM.civs.filter(c=>c.alive&&c.stage===2&&liveCell(c.cap)):[],boxes=[];
     const fs=Math.max(9,Math.min(14,s*2));ctx.font=`600 ${fs}px ${css("--mono")}`;ctx.textAlign="center";ctx.lineWidth=3;ctx.lineJoin="round";
     for(const c of[...st,...ch]){const x=view.x+((c.cap%W)+.5)*s,y=view.y+((c.cap/W|0)+.5)*s;if(x<-50||y<-20||x>r.width+50||y>r.height+20)continue;
-      ctx.fillStyle=`rgb(${mode==="dev"?devCol(c.dev):mode==="unr"&&CITY.get(c.cap)?unrCol(CITY.get(c.cap).a):c.rgb})`;ctx.strokeStyle=mode==="dev"?"#111":"#fff";ctx.beginPath();ctx.arc(x,y,Math.max(c.stage===3?3:2,s*(c.stage===3?.4:.25)),0,7);ctx.fill();ctx.stroke();
-      const w=ctx.measureText(c.name).width/2+2,ty=y-Math.max(6,s*.6),bx=[x-w,ty-fs,x+w,ty+2]; // greedy: bigger civilizations claim label space first
+      ctx.fillStyle=`rgb(${mode==="dev"?devCol(c.dev):mode==="unr"&&CITY.get(c.cap)?unrCol(CITY.get(c.cap).a):c.rgb})`;ctx.strokeStyle=mode==="dev"?"#111":"#fff";if(!L3READY){ctx.beginPath();ctx.arc(x,y,Math.max(c.stage===3?3:2,s*(c.stage===3?.4:.25)),0,7);ctx.fill();ctx.stroke()}
+      const w=ctx.measureText(c.name).width/2+2,ty=y-Math.max(6,s*(L3READY?1.5:.6)),bx=[x-w,ty-fs,x+w,ty+2]; // greedy: bigger civilizations claim label space first
       if(boxes.some(o=>bx[0]<o[2]&&bx[2]>o[0]&&bx[1]<o[3]&&bx[3]>o[1]))continue;boxes.push(bx);
       ctx.strokeStyle="rgba(255,255,255,.85)";ctx.strokeText(c.name,x,ty);ctx.fillStyle="#111";ctx.fillText(c.name,x,ty);
       if(mode==="tec"&&c.res&&c.stage===3){const t=TECH[TI[c.res]],p=Math.min(1,c.rp/tCost(c,t)),lb=S$(t[1])+" "+ROM[c.resL||1],ly=y+fs+Math.max(4,s*.5),f0=ctx.font;ctx.font=`500 ${fs-2}px ${css("--mono")}`;
@@ -2371,7 +2414,7 @@ $("restart").onclick=()=>{if(base)restart(SIM.startBP/1000)};
 $("logsel").onchange=()=>renderLog();cv.addEventListener("dblclick",e=>{const r=stage.getBoundingClientRect();zoom(2,e.clientX-r.left,e.clientY-r.top)});$("logf").onchange=renderLog;
 const regen=()=>{if(!base)return;SEED=+$("seed").value||0;genDeposits(SEED);poolStatic();startJob(E.k)};
 $("seed").onchange=regen;$("reseed").onclick=()=>{$("seed").value=Math.floor(Math.random()*1e6);regen()};
-$("c-town").onchange=$("c-riv").onchange=$("c-lf").onchange=$("c-hz").onchange=()=>draw();let FLAGA=.7,flagT=0;$("c-flag").onchange=()=>{$("flag-a").parentElement.hidden=!$("c-flag").checked;if(base){repaintOverlay();draw()}};$("flag-a").parentElement.hidden=true;
+$("c-town").onchange=$("c-riv").onchange=$("c-lf").onchange=$("c-hz").onchange=$("c-3d").onchange=()=>draw();let FLAGA=.7,flagT=0;$("c-flag").onchange=()=>{$("flag-a").parentElement.hidden=!$("c-flag").checked;if(base){repaintOverlay();draw()}};$("flag-a").parentElement.hidden=true;
 $("flag-a").oninput=()=>{FLAGA=$("flag-a").value/100;clearTimeout(flagT);flagT=setTimeout(()=>{if(base&&$("c-flag").checked){repaintOverlay();draw()}},80)}; // flags: icons and flag-painted land
 $("era").onchange=e=>{if(base)restart(+e.target.value)};
 $("era").oninput=e=>{if(base){setPlay(false);SIM.bp=+e.target.value*1000;stats();drawTimeline()}};
